@@ -30,6 +30,11 @@ def on_permission_assets_changed(sender, instance=None, **kwargs):
         for system_user in system_users:
             system_user.assets.add(*tuple(assets))
 
+    if isinstance(instance, AssetPermission):
+        logger.info("Asset permission assets change signal, "
+                    "Update AuthBook assets `{}`".format(instance))
+        AuthBook.update_or_create_perms(instance)
+
 
 @receiver(m2m_changed, sender=AssetPermission.system_users.through)
 def on_permission_system_users_changed(sender, instance=None, **kwargs):
@@ -45,7 +50,7 @@ def on_permission_system_users_changed(sender, instance=None, **kwargs):
 
 @receiver(post_save, sender=AssetPermission, dispatch_uid='my_unique_identifier')
 def on_permission_created_or_update(sender, instance, created=False, **kwargs):
-    logger.info('on permission created or update')
-    logger.info("Update the relationship between users and assets by perm `{}`"
-                .format(instance))
-    AuthBook.update_or_create_perms(instance)
+    if isinstance(instance, AssetPermission):
+        logger.info('On permission created or update signal, '
+                    'Update AuthBook assets `{}`'.format(instance))
+        AuthBook.update_or_create_perms(instance)

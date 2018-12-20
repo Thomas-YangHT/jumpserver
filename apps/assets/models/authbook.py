@@ -61,9 +61,7 @@ class AuthBook(AssetUser):
         }
 
         auth = user.get_auth()
-        defaults = {
-            'name': "{}:{}".format(user.username, asset.hostname)
-        }
+        defaults = {'name': "{}:{}".format(user.username, asset.hostname)}
         defaults.update(**lookup)
         defaults.update(**auth)
         obj = cls.update_or_create(defaults, **lookup)
