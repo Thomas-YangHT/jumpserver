@@ -6,18 +6,9 @@ from django.db import models
 from django.utils.translation import ugettext as _
 
 
+from perms.models import AssetPermission
 from .base import AssetUser
 from ..models import Asset
-
-
-def get_auth_from_vault(query_field):
-    # TODO: get auth from vault
-    return {}
-
-
-def update_or_create_vault():
-    # TODO: set auth to vault
-    pass
 
 
 class AuthBook(AssetUser):
@@ -27,36 +18,65 @@ class AuthBook(AssetUser):
     )
 
     @classmethod
-    def get_auth_from_auth_book_or_vault(cls, query_field):
+    def get_auth_from_auth_book(cls, query_field):
         try:
             obj = cls.objects.get(**query_field)
         except AuthBook.DoesNotExist:
-            auth = get_auth_from_vault(query_field)
+            auth = {}
         else:
             auth = obj.get_auth_from_local()
         return auth
 
     @classmethod
-    def update_or_create_auth_book_or_vault_by_asset(cls, asset):
-        cls.update_or_create_by_asset(asset)
-        update_or_create_vault()
-
-    @classmethod
     def update_or_create_by_asset(cls, asset):
         if not isinstance(asset, Asset):
             return None
-
         admin_user = asset.admin_user
-        kwargs = {
-            'username': admin_user.username,
-            'asset': asset
-        }
-        defaults = kwargs.update({
-            'name': "{}:{}".format(admin_user.username, asset.hostname)
-        })
-        obj, created = cls.objects.update_or_create(defaults=defaults, **kwargs)
+        obj = cls.update_or_create_by_user_asset(admin_user, asset)
+        return obj
 
-        auth = admin_user.get_auth()
+    @classmethod
+    def update_or_create_perms(cls, perm):
+        if not isinstance(perm, AssetPermission):
+            return None
+
+        assets = set(perm.assets.all())
+        for node in perm.nodes.all():
+            assets.update(set(node.assets.all()))
+        system_users = set(perm.system_users.all())
+
+        for asset in assets:
+            for system_user in system_users:
+                cls.update_or_create_by_user_asset(system_user, asset)
+
+    @classmethod
+    def update_or_create_by_user_asset(cls, user, asset):
+        """
+        :param user: 继承了assets.models.AssetUser的类的实例对象
+        :param asset: assets.models.Asset
+        :return: AuthBook obj
+        """
+        lookup = {
+            'username': user.username, 'asset': asset
+        }
+
+        auth = user.get_auth()
+        defaults = {
+            'name': "{}:{}".format(user.username, asset.hostname)
+        }
+        defaults.update(**lookup)
+        defaults.update(**auth)
+        obj = cls.update_or_create(defaults, **lookup)
+        return obj
+
+    @classmethod
+    def update_or_create(cls, defaults, **kwargs):
+        auth = {
+            'password': defaults.pop('password'),
+            'public_key': defaults.pop('public_key'),
+            'private_key': defaults.pop('private_key')
+        }
+        obj, created = cls.objects.update_or_create(defaults=defaults, **kwargs)
         obj.set_auth(**auth)
         return obj
 

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 #
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 
+from assets.models import AuthBook
 from common.utils import get_logger
 from .models import AssetPermission
 
@@ -40,3 +41,11 @@ def on_permission_system_users_changed(sender, instance=None, **kwargs):
         for system_user in system_users:
             system_user.nodes.add(*tuple(nodes))
             system_user.assets.add(*tuple(assets))
+
+
+@receiver(post_save, sender=AssetPermission, dispatch_uid='my_unique_identifier')
+def on_permission_created_or_update(sender, instance, created=False, **kwargs):
+    logger.info('on permission created or update')
+    logger.info("Update the relationship between users and assets by perm `{}`"
+                .format(instance))
+    AuthBook.update_or_create_perms(instance)
