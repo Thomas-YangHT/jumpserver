@@ -113,7 +113,36 @@ class AssetUser(OrgModelMixin):
             self.save(update_fields=update_fields)
 
     def get_auth(self, asset=None):
-        pass
+        """
+        :param asset: Asset object
+        :return: {'password': '', public_key: '', private_key: ''}
+        """
+        auth = {}
+
+        if asset is not None:
+            auth = self.get_auth_from_auth_book(asset)
+
+        if not auth:
+            auth = self.get_auth_from_local()
+
+        return auth
+
+    def get_auth_from_auth_book(self, asset):
+        from .authbook import AuthBook
+        query_field = {
+            'username': self.username,
+            'asset': asset
+        }
+        auth = AuthBook.get_auth_from_auth_book_or_vault(query_field)
+        return auth
+
+    def get_auth_from_local(self):
+        auth = {
+            'password': self.password,
+            'public_key': self.public_key,
+            'private_key': self.private_key
+        }
+        return auth
 
     def clear_auth(self):
         self._password = ''
