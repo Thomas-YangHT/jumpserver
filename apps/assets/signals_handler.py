@@ -5,7 +5,7 @@ from django.db.models.signals import post_save, m2m_changed, post_delete
 from django.dispatch import receiver
 
 from common.utils import get_logger
-from .models import Asset, SystemUser, Node
+from .models import Asset, SystemUser, Node, AuthBook
 from .tasks import update_assets_hardware_info_util, \
     test_asset_connectivity_util, push_system_user_to_assets
 
@@ -38,6 +38,11 @@ def on_asset_created_or_update(sender, instance=None, created=False, **kwargs):
         # 过期节点资产数量
         nodes = instance.nodes.all()
         Node.expire_nodes_assets_amount(nodes)
+
+    # 关联管理用户和auth_book/vault
+    logger.info("Update the relationship between users and assets by asset `{}`"
+                .format(instance))
+    AuthBook.update_or_create_auth_book_or_vault_by_asset(instance)
 
 
 @receiver(post_delete, sender=Asset, dispatch_uid="my_unique_identifier")

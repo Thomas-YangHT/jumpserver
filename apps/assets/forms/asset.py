@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 from django import forms
+from django.db.models.signals import post_save
 from django.utils.translation import gettext_lazy as _
 
 from common.utils import get_logger
@@ -145,6 +146,10 @@ class AssetBulkUpdateForm(OrgModelForm):
         nodes = cleaned_data.pop('nodes', None)
         assets = Asset.objects.filter(id__in=[asset.id for asset in assets])
         assets.update(**cleaned_data)
+
+        # 逐个发送post_save信号
+        for asset in assets:
+            post_save.send(sender=Asset, instance=asset)
 
         if labels:
             for asset in assets:
