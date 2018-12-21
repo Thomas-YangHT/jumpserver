@@ -5,7 +5,7 @@ from django.db.models.signals import post_save, m2m_changed, post_delete
 from django.dispatch import receiver
 
 from common.utils import get_logger
-from .models import Asset, SystemUser, Node, AuthBook
+from .models import Asset, AdminUser, SystemUser, Node, AuthBook
 from .tasks import update_assets_hardware_info_util, \
     test_asset_connectivity_util, push_system_user_to_assets
 
@@ -42,7 +42,7 @@ def on_asset_created_or_update(sender, instance=None, created=False, **kwargs):
     # 关联管理用户和auth_book/vault
     logger.info("Update the relationship between users and assets by asset `{}`"
                 .format(instance))
-    AuthBook.update_or_create_auth_book_or_vault_by_asset(instance)
+    AuthBook.update_or_create_by_asset(instance)
 
 
 @receiver(post_delete, sender=Asset, dispatch_uid="my_unique_identifier")
@@ -111,3 +111,14 @@ def on_node_assets_changed(sender, instance=None, **kwargs):
 def on_node_update_or_created(sender, instance=None, created=False, **kwargs):
     if instance and not created:
         instance.expire_full_value()
+
+
+@receiver(post_save, sender=AdminUser)
+def on_admin_user_update_or_created(sender, instance=None, created=False, **kwargs):
+    if isinstance(instance, AdminUser):
+        if not created:
+            logger.info("Admin user`{}` update signal received".format(instance))
+            assets = instance.get_related_assets()
+            for asset in assets:
+                AuthBook.update_or_create_by_asset(asset)
+

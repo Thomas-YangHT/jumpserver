@@ -137,12 +137,11 @@ class AssetUser(OrgModelMixin):
         return auth
 
     def get_auth_from_local(self):
-        auth = {
+        return {
             'password': self.password,
             'public_key': self.public_key,
             'private_key': self.private_key
         }
-        return auth
 
     def clear_auth(self):
         self._password = ''

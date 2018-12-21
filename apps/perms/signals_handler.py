@@ -33,7 +33,7 @@ def on_permission_assets_changed(sender, instance=None, **kwargs):
     if isinstance(instance, AssetPermission):
         logger.info("Asset permission assets change signal, "
                     "Update AuthBook assets `{}`".format(instance))
-        AuthBook.update_or_create_perms(instance)
+        AuthBook.update_or_create_by_perm(instance)
 
 
 @receiver(m2m_changed, sender=AssetPermission.system_users.through)
@@ -53,4 +53,4 @@ def on_permission_created_or_update(sender, instance, created=False, **kwargs):
     if isinstance(instance, AssetPermission):
         logger.info('On permission created or update signal, '
                     'Update AuthBook assets `{}`'.format(instance))
-        AuthBook.update_or_create_perms(instance)
+        AuthBook.update_or_create_by_perm(instance)

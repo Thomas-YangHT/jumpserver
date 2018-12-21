@@ -25,6 +25,7 @@ class AuthBook(AssetUser):
             auth = {}
         else:
             auth = obj.get_auth_from_local()
+            print('get auth from AuthBook: {}'.format(auth))
         return auth
 
     @classmethod
@@ -36,7 +37,7 @@ class AuthBook(AssetUser):
         return obj
 
     @classmethod
-    def update_or_create_perms(cls, perm):
+    def update_or_create_by_perm(cls, perm):
         if not isinstance(perm, AssetPermission):
             return None
 
@@ -52,7 +53,7 @@ class AuthBook(AssetUser):
     @classmethod
     def update_or_create_by_user_asset(cls, user, asset):
         """
-        :param user: 继承了assets.models.AssetUser的类的实例对象
+        :param user: 继承了assets.models.AssetUser的类的实例对象: AdminUser SystemUser AuthBook
         :param asset: assets.models.Asset
         :return: AuthBook obj
         """
@@ -76,7 +77,12 @@ class AuthBook(AssetUser):
         }
         obj, created = cls.objects.update_or_create(defaults=defaults, **kwargs)
         obj.set_auth(**auth)
+        print('set auth to AuthBook: {}'.format(defaults.get('name', 'NNN')))
         return obj
 
     def __str__(self):
         return '{}:{}'.format(self.asset.hostname, self.username)
+
+    class Meta:
+        unique_together = [('org_id', 'username', 'asset')]
+        verbose_name = _("Asset permission")

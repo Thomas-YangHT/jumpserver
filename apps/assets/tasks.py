@@ -292,14 +292,17 @@ def get_push_system_user_tasks(system_user):
         return []
 
     tasks = []
-    if system_user.password:
+    auth = system_user.get_auth()
+    password = auth.get('password', '')
+    public_key = auth.get('public_key', '')
+    if password:
         tasks.append({
             'name': 'Add user {}'.format(system_user.username),
             'action': {
                 'module': 'user',
                 'args': 'name={} shell={} state=present password={}'.format(
                     system_user.username, system_user.shell,
-                    encrypt_password(system_user.password, salt="K3mIlKK"),
+                    encrypt_password(password, salt="K3mIlKK"),
                 ),
             }
         })
@@ -321,13 +324,13 @@ def get_push_system_user_tasks(system_user):
                 'when': 'home_existed.stat.exists == true'
             }
         ])
-    if system_user.public_key:
+    if public_key:
         tasks.append({
             'name': 'Set {} authorized key'.format(system_user.username),
             'action': {
                 'module': 'authorized_key',
                 'args': "user={} state=present key='{}'".format(
-                    system_user.username, system_user.public_key
+                    system_user.username, public_key
                 )
             }
         })

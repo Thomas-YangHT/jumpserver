@@ -195,9 +195,11 @@ class Asset(OrgModelMixin):
 
     def get_auth_info(self):
         if self.admin_user:
+            auth = self.admin_user.get_auth(self)
+            password = auth.get('password', '')
             return {
                 'username': self.admin_user.username,
-                'password': self.admin_user.password,
+                'password': password,
                 'private_key': self.admin_user.private_key_file,
                 'become': self.admin_user.become_info,
             }
@@ -231,9 +233,11 @@ class Asset(OrgModelMixin):
         data = self.to_json()
         if self.admin_user:
             admin_user = self.admin_user
+            auth = admin_user.get_auth(self)
+            password = auth.get('password', '')
             data.update({
                 'username': admin_user.username,
-                'password': admin_user.password,
+                'password': password,
                 'private_key': admin_user.private_key_file,
                 'become': admin_user.become_info,
                 'groups': [node.value for node in self.nodes.all()],
