@@ -133,7 +133,7 @@ class AssetUser(OrgModelMixin):
             'username': self.username,
             'asset': asset
         }
-        auth = AuthBook.get_auth_from_auth_book_or_vault(query_field)
+        auth = AuthBook._get_auth(query_field)
         return auth
 
     def get_auth_from_local(self):

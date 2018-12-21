@@ -18,7 +18,7 @@ class AuthBook(AssetUser):
     )
 
     @classmethod
-    def get_auth_from_auth_book(cls, query_field):
+    def _get_auth(cls, query_field):
         try:
             obj = cls.objects.get(**query_field)
         except AuthBook.DoesNotExist:
